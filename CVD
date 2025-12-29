@@ -1,0 +1,13 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fintred
+
+//@version=6
+
+indicator("Cumulative Volume Delta", "CVD", overlay=false)
+
+// --- Дельта объема для каждого бара (покупка/продажа) ---
+delta_volume = (close > open ? volume : (close < open ? -volume : 0))
+// --- Кумулятивная дельта (нарастающий итог) ---
+cvd = ta.cum(delta_volume)
+
+plot(cvd, title="Cumulative Volume Delta", color=color.yellow, linewidth=1)
