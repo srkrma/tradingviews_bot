@@ -1,0 +1,21 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fintred
+
+//@version=6
+indicator("Cumulative Delta Volume", "CDV", overlay=false)
+
+tw = high - math.max(open, close)
+bw = math.min(open, close) - low
+body = math.abs(close - open)
+
+_rate(cond) =>
+    ret = 0.5 * (tw + bw + (cond ? 2 * body : 0)) / (tw + bw + body)
+    ret := na(ret) ? 0.5 : ret
+    ret
+
+deltaup = volume * _rate(open <= close)
+deltadown = volume * _rate(open > close)
+delta = close >= open ? deltaup : -deltadown
+cumdelta = ta.cum(delta)  // 
+
+plot(cumdelta, title="Cumulative Delta Volume", color=color.yellow, linewidth=1)
