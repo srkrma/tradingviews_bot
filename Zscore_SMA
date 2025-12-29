@@ -1,0 +1,49 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fintred
+
+//@version=6
+
+indicator("Zscore_SMA", "Zscore_SMA", overlay=false, precision=4)
+
+// ==============================================================================
+// ВХОДНЫЕ ПАРАМЕТРЫ ДЛЯ НАСТРОЙКИ ИНДИКАТОРА
+// ==============================================================================
+
+// --- Период Z-Score для основных линий (BTC.D, TOTAT3, USDT.D, Current Asset) ---
+main_z_score_period = input.int(365, "Main Z-Score Period (Bars)", minval=10, maxval=1000, step=10, tooltip="Основной период для расчета Z-Score BTC.D, TOTAL3, USDT.D и текущего актива.")
+
+// --- Входные данные (Данные для расчетов) ---
+// --- timeframe.period гарантирует, что таймфрейм символа соответствует таймфрейму графика ---
+current_price = request.security(syminfo.tickerid, timeframe.period, close)
+
+// --- Функция для расчета Z-нормализации (теперь с аргументом period) ---
+z_score(series, period, use_log = false) => // Добавлен аргумент 'period'
+    src = use_log ? math.log(series) : series
+    mean = ta.sma(src, period) // Используем переданный period
+    stdev = ta.stdev(src, period) // Используем переданный period
+    
+    // Обработка случая, когда стандартное отклонение равно нулю (нет изменений в данных)
+    if stdev == 0
+        0.0
+    else
+        (src - mean) / stdev
+// --- Применяем Z-нормализацию ко всем сериям данных ---
+current_price_z = z_score(current_price, main_z_score_period, true)
+
+// ==============================================================================
+// ОСНОВНЫЕ ГРАФИКИ
+// ==============================================================================
+
+// --- Графики с фиксированными цветами ---
+// --- Порядок в plot() определяет порядок значений в заголовке индикатора (слева направо) ---
+plot(current_price_z, "Current Asset Z-Score", color=color.silver, linewidth=2)
+
+// --- Горизонтальные линии для уровней z-оценки (оставляем без изменений) ---
+hline(0, "Zero", color=color.gray, linestyle=hline.style_solid)
+hline(2, "+2 Std Dev", color=color.gray, linestyle=hline.style_dotted)
+hline(-2, "-2 Std Dev", color=color.gray, linestyle=hline.style_dotted)
+hline(3, "+3 Std Dev", color=color.silver, linestyle=hline.style_dashed)
+hline(-3, "-3 Std Dev", color=color.silver, linestyle=hline.style_dashed)
+hline(1, "+1 Std Dev", color=color.orange, linestyle=hline.style_dashed)
+hline(-1, "-1 Std Dev", color=color.orange, linestyle=hline.style_dashed)
+fill(hline(2), hline(-2), color=color.new(color.gray, 90), title="Inactive Zone")
